@@ -100,11 +100,7 @@ export default function DashboardLayout({ children }) {
           path: '/settings/theme',
           icon: 'Palette'
         },
-        {
-          title: 'تنظیمات تم (نسخه قدیمی)',
-          path: '/settings/theme-old',
-          icon: 'Palette'
-        },
+
         {
           title: t('settings.general'),
           path: '/settings/general',
