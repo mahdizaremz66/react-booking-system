@@ -13,7 +13,6 @@ import Dashboard from './pages/Dashboard';
 import AccountingAccountList from './pages/AccountingAccountList';
 import AccountingJournalList from './pages/AccountingJournalList';
 import ThemeSettings from './pages/ThemeSettings';
-
 import NotFound from './pages/NotFound';
 
 function AppContent() {
@@ -58,7 +57,6 @@ function AppContent() {
               <ThemeSettings />
             </DashboardLayout>
           } />
-
           <Route path="*" element={
             <PublicLayout>
               <NotFound />

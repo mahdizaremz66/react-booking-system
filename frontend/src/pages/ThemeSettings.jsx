@@ -45,6 +45,18 @@ import {
     createCustomTemplate,
     deleteCustomTemplate
 } from '../services/themeSettingsService';
+import { 
+    calendarTypes, 
+    dateFormats, 
+    timeFormats, 
+    numberFormats, 
+    currencies,
+    getCurrencyByCode,
+    getDateFormatByValue,
+    getTimeFormatByValue,
+    getNumberFormatByValue
+} from '../config/languageSettings';
+import { getFontsByCategory } from '../config/fonts';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -180,6 +192,15 @@ export default function ThemeSettings() {
             name: '',
             nativeName: '',
             direction: 'ltr',
+            calendar: 'gregorian',
+            fontPrimary: 'Arial',
+            fontFallback: 'Tahoma, Arial, sans-serif',
+            translationFile: '',
+            dateFormat: 'MM/DD/YYYY',
+            timeFormat: 'HH:mm',
+            numberFormat: 'en-US',
+            currency: 'USD',
+            currencySymbol: '$',
             isActive: true,
             isDefault: false
         };
@@ -200,9 +221,31 @@ export default function ThemeSettings() {
 
     const handleLanguageChange = (index, field, value) => {
         setLanguages(prev => 
-            prev.map((lang, i) => 
-                i === index ? { ...lang, [field]: value } : lang
-            )
+            prev.map((lang, i) => {
+                if (i === index) {
+                    const updatedLang = { ...lang, [field]: value };
+                    
+                    // اگر ارز تغییر کرد، نماد ارز را به‌روزرسانی کن
+                    if (field === 'currency') {
+                        const currency = getCurrencyByCode(value);
+                        if (currency) {
+                            updatedLang.currencySymbol = currency.symbol;
+                        }
+                    }
+                    
+                    // اگر زبان پیش‌فرض شد، بقیه را غیرپیش‌فرض کن
+                    if (field === 'isDefault' && value === true) {
+                        return updatedLang;
+                    }
+                    
+                    return updatedLang;
+                }
+                // اگر زبان دیگری پیش‌فرض شد، این زبان را غیرپیش‌فرض کن
+                if (field === 'isDefault' && value === true) {
+                    return { ...lang, isDefault: false };
+                }
+                return lang;
+            })
         );
     };
 
@@ -461,25 +504,28 @@ export default function ThemeSettings() {
                                     </Box>
 
                                     <Grid container spacing={2}>
-                                        <Grid xs={12} sm={6}>
+                                        {/* ستون اول: اطلاعات پایه */}
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <TextField
                                                 fullWidth
                                                 label="کد زبان"
                                                 value={lang.code || ''}
                                                 onChange={(e) => handleLanguageChange(index, 'code', e.target.value)}
                                                 size="small"
+                                                required
                                             />
                                         </Grid>
-                                        <Grid xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <TextField
                                                 fullWidth
                                                 label="نام زبان"
                                                 value={lang.name || ''}
                                                 onChange={(e) => handleLanguageChange(index, 'name', e.target.value)}
                                                 size="small"
+                                                required
                                             />
                                         </Grid>
-                                        <Grid xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <TextField
                                                 fullWidth
                                                 label="نام بومی"
@@ -488,7 +534,9 @@ export default function ThemeSettings() {
                                                 size="small"
                                             />
                                         </Grid>
-                                        <Grid xs={12} sm={6}>
+
+                                        {/* ستون دوم: تنظیمات پایه */}
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <FormControl fullWidth size="small">
                                                 <InputLabel>جهت</InputLabel>
                                                 <Select
@@ -500,6 +548,138 @@ export default function ThemeSettings() {
                                                     <MenuItem value="rtl">راست به چپ</MenuItem>
                                                 </Select>
                                             </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>نوع تقویم</InputLabel>
+                                                <Select
+                                                    value={lang.calendar || 'gregorian'}
+                                                    onChange={(e) => handleLanguageChange(index, 'calendar', e.target.value)}
+                                                    label="نوع تقویم"
+                                                >
+                                                    {calendarTypes.map(cal => (
+                                                        <MenuItem key={cal.value} value={cal.value}>
+                                                            {cal.label}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="فایل ترجمه"
+                                                value={lang.translationFile || ''}
+                                                onChange={(e) => handleLanguageChange(index, 'translationFile', e.target.value)}
+                                                size="small"
+                                                placeholder="fa.json"
+                                            />
+                                        </Grid>
+
+                                        {/* ستون سوم: فونت‌ها */}
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>فونت اصلی</InputLabel>
+                                                <Select
+                                                    value={lang.font?.primary || lang.fontPrimary || 'Arial'}
+                                                    onChange={(e) => handleLanguageChange(index, 'fontPrimary', e.target.value)}
+                                                    label="فونت اصلی"
+                                                >
+                                                    {getAvailableFonts().map(font => (
+                                                        <MenuItem key={font.family} value={font.family}>
+                                                            {font.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="فونت پشتیبان"
+                                                value={lang.font?.fallback || lang.fontFallback || ''}
+                                                onChange={(e) => handleLanguageChange(index, 'fontFallback', e.target.value)}
+                                                size="small"
+                                                placeholder="Tahoma, Arial, sans-serif"
+                                            />
+                                        </Grid>
+
+                                        {/* ستون چهارم: فرمت‌های تاریخ و زمان */}
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>فرمت تاریخ</InputLabel>
+                                                <Select
+                                                    value={lang.dateFormat || 'MM/DD/YYYY'}
+                                                    onChange={(e) => handleLanguageChange(index, 'dateFormat', e.target.value)}
+                                                    label="فرمت تاریخ"
+                                                >
+                                                    {dateFormats.map(format => (
+                                                        <MenuItem key={format.value} value={format.value}>
+                                                            {format.label} ({format.example})
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>فرمت زمان</InputLabel>
+                                                <Select
+                                                    value={lang.timeFormat || 'HH:mm'}
+                                                    onChange={(e) => handleLanguageChange(index, 'timeFormat', e.target.value)}
+                                                    label="فرمت زمان"
+                                                >
+                                                    {timeFormats.map(format => (
+                                                        <MenuItem key={format.value} value={format.value}>
+                                                            {format.label} ({format.example})
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+
+                                        {/* ستون پنجم: فرمت عدد و ارز */}
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>فرمت عدد</InputLabel>
+                                                <Select
+                                                    value={lang.numberFormat || 'en-US'}
+                                                    onChange={(e) => handleLanguageChange(index, 'numberFormat', e.target.value)}
+                                                    label="فرمت عدد"
+                                                >
+                                                    {numberFormats.map(format => (
+                                                        <MenuItem key={format.value} value={format.value}>
+                                                            {format.label} ({format.example})
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 3 }}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>ارز</InputLabel>
+                                                <Select
+                                                    value={lang.currency || 'USD'}
+                                                    onChange={(e) => handleLanguageChange(index, 'currency', e.target.value)}
+                                                    label="ارز"
+                                                >
+                                                    {currencies.map(currency => (
+                                                        <MenuItem key={currency.code} value={currency.code}>
+                                                            {currency.name} ({currency.code})
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 3 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="نماد ارز"
+                                                value={lang.currencySymbol || ''}
+                                                onChange={(e) => handleLanguageChange(index, 'currencySymbol', e.target.value)}
+                                                size="small"
+                                                placeholder="$"
+                                            />
                                         </Grid>
                                     </Grid>
                                 </Box>

@@ -100,7 +100,6 @@ export default function DashboardLayout({ children }) {
           path: '/settings/theme',
           icon: 'Palette'
         },
-
         {
           title: t('settings.general'),
           path: '/settings/general',
