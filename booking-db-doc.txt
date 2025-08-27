@@ -1,0 +1,777 @@
+# سیستم مدیریت رزرو، سهام‌داری، و حسابداری پروژه‌های اقامتی
+
+## 🎯 هدف پروژه:
+
+ایجاد یک سیستم یکپارچه برای مدیریت پروژه‌های املاک/گردشگری با قابلیت رزرو آنلاین، مدیریت سرمایه‌گذاری (سهام‌داری)، تخصیص سود، حسابداری دوطرفه، کیف پول دیجیتال و گزارش‌گیری کامل برای مدیران و کاربران نهایی.
+
+---
+
+## 🧩 ساختار ماژول‌ها:
+
+### 1. ماژول حسابداری (Accounting)
+- ساختار حساب‌های معین به‌صورت درختی (t_account)
+- ثبت سند حسابداری دستی/سیستمی (t_journal, t_journal_detail)
+- تراز آزمایشی، دفتر کل، دفتر تفصیلی
+- تنظیم خودکار حساب‌ها در سطوح شخص و پروژه (t_config_item_def, t_config_value)
+- ویوهای: v_general_ledger, v_trial_balance, v_person_ledger, v_person_balance
+
+### 2. ماژول اشخاص (People / Person Management)
+- ثبت اشخاص با چندین نقش (customer, shareholder, vendor...)
+- تخصیص حساب معین به هر شخص
+- نگهداری حساب‌های خاص (سود/سرمایه/کیف‌پول) به تفکیک پروژه (t_person_account)
+- ویوهای ترکیبی: v_person_ledger, v_person_balance
+
+### 3. ماژول کیف پول (Wallet)
+- نگهداری مانده کیف پول (t_wallet)
+- ثبت تراکنش‌های شارژ/مصرف/تعدیل (t_wallet_transaction)
+- ارتباط با حسابداری از طریق سند (wtx_jrn_code)
+- ویوها: v_wallet_balance, v_wallet_txn_history
+
+### 4. ماژول پروژه و واحدها (Projects & Units)
+- ثبت پروژه‌های چندماژولی با مدل درآمد (سهام‌داری، اجاره، فروش) (t_project)
+- تعریف واحدهای اقامتی (room, suite, ...): t_unit
+- دسته‌بندی واحدها بر اساس ظرفیت، متراژ، بلوک و طبقه
+- رزرو و گزارش‌های مصرف واحد
+
+### 5. ماژول تعرفه و قیمت‌گذاری (Tariff & Pricing)
+- تعریف تعرفه پایه برای واحدها با شرایط DSL قابل ارزیابی (t_unit_tariff)
+- تعریف قیمت مهمان اضافه بر اساس سن و ایام پیک (t_unit_tariff_extra)
+- تعریف گروه‌های سنی (t_age_group) و ایام پیک (t_peak_period)
+- ویو: v_tariff_extra_by_age, v_tariff_consumption
+
+### 6. ماژول رزرو و مصرف (Reservation)
+- ثبت رزرو با اطلاعات پروژه، واحد، شخص، تاریخ و قیمت (t_reservation)
+- ذخیره‌ی مصرف واقعی رزرو (تعداد مهمان، شب‌های استفاده‌شده، مبلغ اضافه) (t_reservation_usage)
+- سناریوهای "عدم مصرف > تبدیل به کیف پول" یا Expire
+- ویوها: v_reservation_summary, v_reservation_report_summary
+
+### 7. ماژول سهام‌داری و سود (Shareholding & Profit)
+- خرید سهم در پروژه‌ها (t_shareholding)
+- انتقال سهم بین اشخاص (t_share_transfer)
+- محاسبه و تخصیص سود سالانه بر اساس سهم و پروژه (t_share_profit)
+- ویوها: v_profit_distribution, v_project_person_roles
+
+### 8. ماژول کاربران و امنیت (Users & Audit Log)
+- حساب کاربری برای اشخاص (t_user_account)
+- نقش‌ها (admin, manager, viewer)
+- لاگ عملیاتی ثبت‌شده روی جداول سیستم (t_user_log)
+- ویو: v_user_log_audit
+
+---
+
+## ⚙️ سناریوی مرحله‌به‌مرحله (Business Flow):
+
+1. مدیر پروژه را تعریف می‌کند و واحدهای اقامتی را ثبت می‌کند  
+2. اشخاص جدید ثبت می‌شوند و در پروژه‌ها سهام می‌خرند  
+3. تعرفه پایه و قیمت‌گذاری مهمان اضافه تعریف می‌شود  
+4. کاربر با ثبت‌نام در سیستم، کیف پول خود را شارژ می‌کند  
+5. از طریق پنل رزرو، بازه‌ای را انتخاب و رزرو انجام می‌دهد  
+6. سیستم رزرو را ارزیابی می‌کند (تعداد شب، مهمان اضافه، تعرفه پیک)  
+7. سود سالانه بر اساس سهم محاسبه و به کیف پول سهام‌دار تخصیص می‌یابد  
+8. کل فرآیند از طریق گزارش‌ها و ویوهای تحلیلی قابل بررسی است
+
+--
+
+# ادامه فایل: ساختار SQL (CREATE TABLE / CREATE VIEW)
+
+-- =======================
+-- جدول t_account
+-- =======================
+-- تعریف حساب‌های معین و کل
+-- شامل ساختار درختی با کد پدر، نوع حساب (debit/credit)، ماهیت، گروه‌بندی دارایی و ... 
+-- کاربرد در دفتر کل، تراز، و تخصیص به افراد یا پروژه‌ها
+
+CREATE TABLE t_account (
+    acc_code VARCHAR(50) PRIMARY KEY,                   -- مثل 01/002/0001/0001
+    acc_name VARCHAR(200) NOT NULL,                    -- نام حساب
+    acc_parent_code VARCHAR(50),                       -- کد حساب پدر (ساختار درختی)
+    acc_sublevel_format TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- تعداد رقم سطوح پایین‌تر
+    acc_type ENUM('debit','credit','neutral') NOT NULL,       -- ماهیت حساب
+    acc_category ENUM('asset','liability','income','expense','equity'), -- گروه حساب
+    acc_is_bank BOOLEAN DEFAULT FALSE,                 -- آیا حساب بانکی است؟
+    acc_is_active BOOLEAN DEFAULT TRUE,                -- فعال بودن حساب
+    acc_notes TEXT,                                    -- یادداشت توضیحی
+    acc_created_by VARCHAR(50),
+    acc_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    acc_updated_by VARCHAR(50),
+    acc_updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_journal
+-- =======================
+-- نگهداری اطلاعات کلی هر سند حسابداری (تاریخ، توضیح، ماژول مرتبط، وضعیت)
+-- هر سند شامل چندین آرتیکل (در t_journal_detail)
+
+CREATE TABLE t_journal (
+    jrn_code VARCHAR(30) PRIMARY KEY,              -- کد یکتای سند
+    jrn_date DATE NOT NULL,                        -- تاریخ سند
+    jrn_desc VARCHAR(255),                         -- شرح کلی
+    jrn_type ENUM('manual','auto','closing') DEFAULT 'manual', -- نوع سند
+    jrn_module VARCHAR(50),                        -- نام ماژول ایجادکننده (رزرو، فروش و غیره)
+    jrn_ref_code VARCHAR(100),                     -- کد ارجاع مرتبط
+    jrn_is_posted BOOLEAN DEFAULT FALSE,           -- آیا ثبت نهایی شده؟
+    jrn_created_by VARCHAR(50),
+    jrn_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    jrn_updated_by VARCHAR(50),
+    jrn_updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_journal_detail
+-- =======================
+-- ثبت ردیف‌های بدهکار/بستانکار در هر سند، با شماره خط، کد حساب و شرح
+
+CREATE TABLE t_journal_detail (
+    jrd_jrn_code VARCHAR(30) NOT NULL,            -- ارجاع به سند اصلی
+    jrd_line_no SMALLINT NOT NULL,                -- شماره ردیف
+    jrd_acc_code VARCHAR(50) NOT NULL,            -- کد حساب
+    jrd_debit DECIMAL(18,2) DEFAULT 0,            -- مبلغ بدهکار
+    jrd_credit DECIMAL(18,2) DEFAULT 0,           -- مبلغ بستانکار
+    jrd_desc VARCHAR(255),                        -- شرح آرتیکل
+    PRIMARY KEY (jrd_jrn_code, jrd_line_no)
+);
+
+-- =======================
+-- جدول t_config_item_def
+-- =======================
+-- تعریف آیتم‌های پیکربندی حساب‌ها برای تخصیص خودکار در سطوح مختلف
+
+CREATE TABLE t_config_item_def (
+    cfg_item_key     VARCHAR(100) PRIMARY KEY,                  -- کلید مثل 'DEFAULT_INCOME_ACC'
+    cfg_title        VARCHAR(200),                              -- عنوان قابل فهم
+    cfg_target_type  ENUM('global', 'person', 'project', 'person_project'), -- سطح اعمال
+    cfg_account_type ENUM('group','leaf'),                      -- نوع حساب قابل انتخاب
+    cfg_is_required  BOOLEAN DEFAULT TRUE,                      -- اجباری بودن
+    cfg_notes        TEXT                                       -- توضیح
+);
+
+-- =======================
+-- جدول t_config_value
+-- =======================
+-- مقداردهی عملیاتی به آیتم‌های پیکربندی برای افراد/پروژه‌ها
+
+CREATE TABLE t_config_value (
+    cfg_item_key     VARCHAR(100),                      -- ارجاع به کلید تعریف‌شده
+    cfg_context_id   VARCHAR(50),                       -- شناسه فرد یا پروژه
+    cfg_acc_code     VARCHAR(50),                       -- کد حساب انتخاب‌شده
+    cfg_is_active    BOOLEAN DEFAULT TRUE,
+    cfg_created_by   VARCHAR(50),
+    cfg_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (cfg_item_key, cfg_context_id)
+);
+
+-- =======================
+-- جدول t_account_bank
+-- =======================
+-- مشخصات حساب‌های بانکی متصل به حساب‌های ثبت‌شده در t_account
+
+CREATE TABLE t_account_bank (
+    abk_acc_code      VARCHAR(50) PRIMARY KEY,           -- لینک به t_account.acc_code
+    abk_bank_name     VARCHAR(100),                      -- نام بانک
+    abk_branch_name   VARCHAR(100),                      -- نام شعبه
+    abk_account_no    VARCHAR(50),                       -- شماره حساب
+    abk_sheba         VARCHAR(30),                       -- شماره شبا
+    abk_currency      ENUM('IRR','USD','EUR') DEFAULT 'IRR', -- نوع ارز
+    abk_is_active     BOOLEAN DEFAULT TRUE,              -- وضعیت فعال
+    abk_is_pos        BOOLEAN DEFAULT TRUE,              -- مجهز به کارت‌خوان؟
+    abk_is_check      BOOLEAN DEFAULT TRUE,              -- قابلیت دریافت چک؟
+    abk_created_by    VARCHAR(50),
+    abk_created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    abk_updated_by    VARCHAR(50),
+    abk_updated_at    DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_person
+-- =======================
+-- اطلاعات اشخاص حقیقی یا حقوقی در سیستم
+-- شامل انواع نقش‌ها مثل مشتری، سهام‌دار، تامین‌کننده
+
+CREATE TABLE t_person (
+    per_code         VARCHAR(30) PRIMARY KEY,
+    per_name         VARCHAR(200) NOT NULL,              -- نام کامل شخص
+    per_national_id  VARCHAR(20),                        -- کد ملی
+    per_mobile       VARCHAR(20),
+    per_email        VARCHAR(100),
+    per_type_set     SET('customer','shareholder','vendor','lessor'), -- نقش‌ها
+    per_acc_code     VARCHAR(50),                        -- کد حساب معین شخص
+    per_is_active    BOOLEAN DEFAULT TRUE,
+    per_notes        TEXT,
+    per_created_by   VARCHAR(50),
+    per_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    per_updated_by   VARCHAR(50),
+    per_updated_at   DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_person_account
+-- =======================
+-- نگاشت حساب‌های خاص هر شخص برای مقاصد مختلف (سود، سرمایه، کیف پول)
+
+CREATE TABLE t_person_account (
+    pac_person_code  VARCHAR(30),                -- شخص
+    pac_type         ENUM('shareholder_capital','shareholder_profit','wallet'), -- نوع حساب
+    pac_prj_code     VARCHAR(30),                -- پروژه مربوطه
+    pac_acc_code     VARCHAR(50),                -- کد حساب ثبت‌شده
+    pac_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (pac_person_code, pac_type, pac_prj_code)
+);
+
+-- =======================
+-- جدول t_wallet
+-- =======================
+-- مانده کیف پول هر شخص به‌صورت فعلی
+
+CREATE TABLE t_wallet (
+    wlt_per_code     VARCHAR(30) PRIMARY KEY,     -- ارجاع به t_person.per_code
+    wlt_balance      DECIMAL(18,2) DEFAULT 0,     -- مانده فعلی
+    wlt_last_update  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    wlt_created_by   VARCHAR(50),
+    wlt_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    wlt_updated_by   VARCHAR(50),
+    wlt_updated_at   DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_wallet_transaction
+-- =======================
+-- تمام تراکنش‌های شارژ، مصرف، و تعدیل کیف پول
+
+CREATE TABLE t_wallet_transaction (
+    wtx_id           INT PRIMARY KEY AUTO_INCREMENT,
+    wtx_per_code     VARCHAR(30) NOT NULL,                   -- شخص مربوطه
+    wtx_type         ENUM('charge','consume','adjust'),      -- نوع عملیات
+    wtx_amount       DECIMAL(18,2) NOT NULL,                 -- مبلغ
+    wtx_datetime     DATETIME DEFAULT CURRENT_TIMESTAMP,     -- زمان ثبت
+    wtx_desc         VARCHAR(255),                           -- شرح
+    wtx_ref_type     ENUM('invoice','reward','admin','transfer'), -- منبع مرتبط
+    wtx_ref_code     VARCHAR(50),                            -- کد مرجع
+    wtx_jrn_code     VARCHAR(30),                            -- سند حسابداری متناظر
+    wtx_created_by   VARCHAR(50)
+);
+
+-- =======================
+-- جدول t_project
+-- =======================
+-- اطلاعات پروژه‌های فعال در سیستم: املاک، گردشگری، مشارکتی و...
+
+CREATE TABLE t_project (
+    prj_code       VARCHAR(30) PRIMARY KEY,         -- کد پروژه
+    prj_title      VARCHAR(200) NOT NULL,           -- نام پروژه
+    prj_location   VARCHAR(200),                    -- مکان
+    prj_type       ENUM('real_estate','tourism','holding','custom') DEFAULT 'custom', -- نوع کلی
+    prj_model      SET('shareholding','rental','sale','hybrid') NOT NULL, -- مدل مالکیت
+    prj_start_date DATE,
+    prj_end_date   DATE,
+    prj_nav        DECIMAL(18,2),                   -- ارزش خالص دارایی پروژه
+    prj_is_active  BOOLEAN DEFAULT TRUE,
+    prj_created_by VARCHAR(50),
+    prj_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    prj_updated_by VARCHAR(50),
+    prj_updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_shareholding
+-- =======================
+-- نگهداری اطلاعات سهم اشخاص در هر پروژه
+
+CREATE TABLE t_shareholding (
+    shr_id            INT PRIMARY KEY AUTO_INCREMENT,
+    shr_per_code      VARCHAR(30) NOT NULL,         -- شخص
+    shr_prj_code      VARCHAR(30) NOT NULL,         -- پروژه
+    shr_shares        INT NOT NULL,                 -- تعداد سهم
+    shr_unit_price    DECIMAL(18,2),                -- قیمت هر سهم
+    shr_total_value   DECIMAL(18,2),                -- ارزش کل
+    shr_from_date     DATE NOT NULL,                -- تاریخ شروع مالکیت
+    shr_to_date       DATE,                         -- تاریخ پایان (در صورت خروج)
+    shr_is_active     BOOLEAN DEFAULT TRUE,
+    shr_notes         TEXT,
+    shr_created_by    VARCHAR(50),
+    shr_created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    shr_updated_by    VARCHAR(50),
+    shr_updated_at    DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE (shr_per_code, shr_prj_code, shr_from_date)  -- جلوگیری از همپوشانی سهم
+);
+
+-- =======================
+-- جدول t_share_transfer
+-- =======================
+-- انتقال سهام از یک شخص به دیگری با قیمت توافقی
+
+CREATE TABLE t_share_transfer (
+    stf_id           INT PRIMARY KEY AUTO_INCREMENT,
+    stf_prj_code     VARCHAR(30) NOT NULL,
+    stf_from_person  VARCHAR(30) NOT NULL,
+    stf_to_person    VARCHAR(30) NOT NULL,
+    stf_shares       INT NOT NULL,
+    stf_unit_price   DECIMAL(18,2),
+    stf_total_value  DECIMAL(18,2),
+    stf_transfer_date DATE NOT NULL,
+    stf_is_finalized BOOLEAN DEFAULT FALSE,
+    stf_desc         TEXT,
+    stf_created_by   VARCHAR(50),
+    stf_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    stf_updated_by   VARCHAR(50),
+    stf_updated_at   DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_share_profit
+-- =======================
+-- سود تعلق‌گرفته به سهام‌داران در هر دوره محاسباتی
+
+CREATE TABLE t_share_profit (
+    spt_id           INT PRIMARY KEY AUTO_INCREMENT,
+    spt_prj_code     VARCHAR(30) NOT NULL,
+    spt_per_code     VARCHAR(30) NOT NULL,
+    spt_year         SMALLINT NOT NULL,               -- سال مالی
+    spt_period       VARCHAR(20),                     -- دوره (مثلاً فصل یا ماه)
+    spt_shares       INT NOT NULL,                    -- تعداد سهم محاسبه‌شده
+    spt_unit_profit  DECIMAL(18,2),                   -- سود هر سهم
+    spt_total_profit DECIMAL(18,2),                   -- جمع سود
+    spt_is_paid      BOOLEAN DEFAULT FALSE,
+    spt_paid_at      DATETIME,                        -- تاریخ واریز در صورت پرداخت
+    spt_jrn_code     VARCHAR(30),                     -- کد سند ثبت سود
+    spt_created_by   VARCHAR(50),
+    spt_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    spt_updated_by   VARCHAR(50),
+    spt_updated_at   DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_unit
+-- =======================
+-- تعریف واحدهای فیزیکی در هر پروژه (اتاق، ویلا، واحد تجاری و...)
+
+CREATE TABLE t_unit (
+    unt_prj_code     VARCHAR(30) NOT NULL,
+    unt_code         VARCHAR(30) NOT NULL,                -- کد یکتا در پروژه
+    unt_title        VARCHAR(200),                        -- عنوان واحد
+    unt_type         ENUM('room','villa','suite','apartment','commercial') DEFAULT 'room',
+    unt_area         DECIMAL(10,2),                       -- متراژ
+    unt_capacity     SMALLINT,                            -- ظرفیت مهمان
+    unt_floor        VARCHAR(20),
+    unt_block        VARCHAR(50),
+    unt_is_active    BOOLEAN DEFAULT TRUE,
+    unt_notes        TEXT,
+    unt_created_by   VARCHAR(50),
+    unt_created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    unt_updated_by   VARCHAR(50),
+    unt_updated_at   DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (unt_prj_code, unt_code)
+);
+
+-- =======================
+-- جدول t_unit_tariff
+-- =======================
+-- نگهداری تعرفه پایه رزرو واحدها در بازه‌های مختلف زمانی
+-- هر ردیف شامل شرط خاص قابل ارزیابی است (مثل ایام پیک، ظرفیت و سن)
+
+CREATE TABLE t_unit_tariff (
+  utf_prj_code         VARCHAR(30),                -- پروژه مربوطه
+  utf_unit_code        VARCHAR(30),                -- کد واحد
+  utf_from_date        DATE,                       -- شروع بازه
+  utf_to_date          DATE,                       -- پایان بازه
+  utf_row_no           SMALLINT,                   -- شماره خط در بازه
+  utf_condition_expr   TEXT NOT NULL,              -- شرط محاسبه به‌صورت DSL
+  utf_base_price       DECIMAL(18,2),              -- قیمت پایه هر شب
+  utf_max_base_guests  SMALLINT,                   -- سقف مهمان با قیمت پایه
+  utf_max_base_nights  SMALLINT DEFAULT 2,         -- سقف شب با قیمت پایه
+  utf_on_expire_action ENUM('none','convert_to_wallet','optional') DEFAULT 'none', -- اقدام پس از اتمام
+  utf_expire_amount_per_night DECIMAL(18,2),       -- مبلغ انتقال به کیف پول در صورت تبدیل
+  utf_created_by       VARCHAR(50),
+  utf_created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+  utf_updated_by       VARCHAR(50),
+  utf_updated_at       DATETIME ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (utf_prj_code, utf_unit_code, utf_from_date, utf_row_no)
+);
+
+-- =======================
+-- جدول t_unit_tariff_extra
+-- =======================
+-- تعریف تعرفه مهمان اضافه بر اساس سن یا شرایط خاص (در ایام پیک یا غیر پیک)
+
+CREATE TABLE t_unit_tariff_extra (
+  ute_prj_code         VARCHAR(30),
+  ute_unit_code        VARCHAR(30),
+  ute_from_date        DATE,
+  ute_row_no           SMALLINT,
+  ute_age_group        VARCHAR(30),       -- ارجاع به گروه سنی
+  ute_is_peak          BOOLEAN,           -- آیا ایام پیک؟
+  ute_price_per_night  DECIMAL(18,2),     -- هزینه هر شب برای مهمان اضافه
+  PRIMARY KEY (
+    ute_prj_code, ute_unit_code, ute_from_date, ute_row_no, ute_age_group, ute_is_peak
+  )
+);
+
+-- =======================
+-- جدول t_age_group
+-- =======================
+-- گروه‌بندی سنی برای اعمال تعرفه متناسب (کودک، نوجوان، بزرگسال و ...)
+
+CREATE TABLE t_age_group (
+  agp_code     VARCHAR(30) PRIMARY KEY,       -- شناسه گروه
+  agp_title    VARCHAR(100),                  -- عنوان (مثلاً "کودک زیر ۵ سال")
+  agp_min_age  SMALLINT,                      -- از سن
+  agp_max_age  SMALLINT                       -- تا سن
+);
+
+-- =======================
+-- جدول t_peak_period
+-- =======================
+-- ایام خاص پیک برای اعمال تعرفه متفاوت
+
+CREATE TABLE t_peak_period (
+  pkp_label     VARCHAR(30) PRIMARY KEY,       -- نام ایام پیک (مثلاً نوروز 1404)
+  pkp_title     VARCHAR(100),                  -- عنوان کامل
+  pkp_from_date DATE NOT NULL,                 -- شروع ایام پیک
+  pkp_to_date   DATE NOT NULL,                 -- پایان
+  pkp_notes     TEXT                           -- توضیحات
+);
+
+-- =======================
+-- جدول t_reservation
+-- =======================
+-- نگهداری اطلاعات رزرو انجام‌شده توسط افراد
+-- شامل وضعیت رزرو، مبلغ کل، تاریخ ورود و خروج
+
+CREATE TABLE t_reservation (
+  res_id              INT PRIMARY KEY AUTO_INCREMENT,
+  res_prj_code        VARCHAR(30),                           -- پروژه مرتبط
+  res_unit_code       VARCHAR(30),                           -- کد واحد رزرو شده
+  res_per_code        VARCHAR(30),                           -- کد شخص رزروکننده
+  res_checkin         DATE,                                  -- تاریخ ورود
+  res_checkout        DATE,                                  -- تاریخ خروج
+  res_guest_count     SMALLINT,                              -- تعداد مهمان
+  res_total_price     DECIMAL(18,2),                         -- مجموع قیمت رزرو
+  res_status          ENUM('pending','confirmed','cancelled','completed'), -- وضعیت رزرو
+  res_created_by      VARCHAR(50),
+  res_created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  res_updated_by      VARCHAR(50),
+  res_updated_at      DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_reservation_usage
+-- =======================
+-- ثبت عملکرد یا مصرف رزرو در بازه مشخص
+-- برای اعمال تعرفه‌ها، افزودن مهمان، تعداد شب و محاسبه هزینه
+
+CREATE TABLE t_reservation_usage (
+  usu_prj_code         VARCHAR(30),
+  usu_unit_code        VARCHAR(30),
+  usu_from_date        DATE,
+  usu_row_no           SMALLINT,
+  usu_res_id           INT,                           -- ارجاع به رزرو
+  usu_condition_expr   TEXT,                          -- شرط اعمال تعرفه (DSL)
+  usu_guest_count      SMALLINT,                      -- تعداد مهمان مصرف‌شده
+  usu_nights_used      SMALLINT,
+  usu_extra_guests     SMALLINT,
+  usu_total_extra_fee  DECIMAL(18,2),
+  usu_usage_status     ENUM('used','expired','converted') DEFAULT 'used', -- وضعیت مصرف
+  usu_converted_amount DECIMAL(18,2),
+  usu_evaluated_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (
+    usu_prj_code, usu_unit_code, usu_from_date, usu_row_no, usu_res_id
+  )
+);
+
+-- =======================
+-- جدول t_user_account
+-- =======================
+-- حساب کاربری افراد برای ورود به پنل مدیریتی
+
+CREATE TABLE t_user_account (
+  usr_per_code    VARCHAR(30) PRIMARY KEY,     -- لینک به t_person
+  usr_username    VARCHAR(50) UNIQUE NOT NULL, -- نام کاربری
+  usr_password    VARCHAR(200) NOT NULL,       -- هش رمزعبور
+  usr_role        ENUM('admin','manager','viewer') DEFAULT 'viewer', -- نقش
+  usr_is_active   BOOLEAN DEFAULT TRUE,
+  usr_last_login  DATETIME,
+  usr_created_by  VARCHAR(50),
+  usr_created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  usr_updated_by  VARCHAR(50),
+  usr_updated_at  DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- جدول t_user_log
+-- =======================
+-- ثبت فعالیت‌های کاربران به صورت لاگ عملیاتی
+
+CREATE TABLE t_user_log (
+  ulg_id          INT PRIMARY KEY AUTO_INCREMENT,
+  ulg_per_code    VARCHAR(30),                  -- کاربر عامل
+  ulg_action      VARCHAR(100),                 -- نوع عملیات (ایجاد، حذف، ورود و...)
+  ulg_table_name  VARCHAR(50),                  -- جدول مربوطه
+  ulg_record_key  VARCHAR(100),                 -- کلید رکورد
+  ulg_desc        TEXT,                         -- شرح عملیات
+  ulg_ip_address  VARCHAR(50),
+  ulg_timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =======================
+-- ویو v_general_ledger
+-- =======================
+-- دفتر کل تمامی حساب‌ها بر اساس اسناد حسابداری
+
+CREATE VIEW v_general_ledger AS
+SELECT
+  jd.jrd_acc_code,
+  acc.acc_name,
+  j.jrn_date,
+  j.jrn_code,
+  jd.jrd_line_no,
+  jd.jrd_desc,
+  jd.jrd_debit,
+  jd.jrd_credit
+FROM t_journal_detail jd
+JOIN t_journal j ON jd.jrd_jrn_code = j.jrn_code
+JOIN t_account acc ON jd.jrd_acc_code = acc.acc_code
+ORDER BY jd.jrd_acc_code, j.jrn_date, jd.jrd_line_no;
+
+-- =======================
+-- ویو v_person_ledger
+-- =======================
+-- دفتر حساب تفصیلی هر شخص
+
+CREATE VIEW v_person_ledger AS
+SELECT
+  p.per_code,
+  p.per_name,
+  j.jrn_date,
+  j.jrn_code,
+  jd.jrd_line_no,
+  jd.jrd_desc,
+  jd.jrd_debit,
+  jd.jrd_credit
+FROM t_person p
+JOIN t_journal_detail jd ON p.per_acc_code = jd.jrd_acc_code
+JOIN t_journal j ON jd.jrd_jrn_code = j.jrn_code
+ORDER BY p.per_code, j.jrn_date, jd.jrd_line_no;
+
+-- =======================
+-- ویو v_trial_balance
+-- =======================
+-- تراز آزمایشی (مانده بدهکار و بستانکار کل حساب‌ها)
+
+CREATE VIEW v_trial_balance AS
+SELECT
+  acc.acc_code,
+  acc.acc_name,
+  acc.acc_type,
+  SUM(jd.jrd_debit) AS total_debit,
+  SUM(jd.jrd_credit) AS total_credit,
+  SUM(jd.jrd_debit - jd.jrd_credit) AS balance
+FROM t_account acc
+LEFT JOIN t_journal_detail jd ON acc.acc_code = jd.jrd_acc_code
+GROUP BY acc.acc_code, acc.acc_name, acc.acc_type;
+
+-- =======================
+-- ویو v_person_balance
+-- =======================
+-- مانده حساب هر شخص به صورت خلاصه
+
+CREATE VIEW v_person_balance AS
+SELECT
+  p.per_code,
+  p.per_name,
+  SUM(jd.jrd_debit) AS total_debit,
+  SUM(jd.jrd_credit) AS total_credit,
+  SUM(jd.jrd_debit - jd.jrd_credit) AS net_balance
+FROM t_person p
+LEFT JOIN t_journal_detail jd ON p.per_acc_code = jd.jrd_acc_code
+GROUP BY p.per_code, p.per_name;
+
+-- =======================
+-- ویو v_config_map
+-- =======================
+-- گزارش نگاشت تنظیمات پیکربندی حساب‌ها برای افراد یا پروژه‌ها
+
+CREATE VIEW v_config_map AS
+SELECT
+  cfg.cfg_item_key,
+  cfg.cfg_context_id,
+  cfg.cfg_acc_code,
+  a.acc_name
+FROM t_config_value cfg
+LEFT JOIN t_account a ON cfg.cfg_acc_code = a.acc_code
+WHERE cfg.cfg_is_active = TRUE;
+
+-- =======================
+-- ویو v_reservation_summary
+-- =======================
+-- خلاصه اطلاعات رزرو به‌همراه نام شخص
+
+CREATE VIEW v_reservation_summary AS
+SELECT
+  r.res_id,
+  r.res_prj_code,
+  r.res_unit_code,
+  r.res_per_code,
+  p.per_name,
+  r.res_checkin,
+  r.res_checkout,
+  r.res_guest_count,
+  r.res_status,
+  r.res_total_price
+FROM t_reservation r
+JOIN t_person p ON r.res_per_code = p.per_code;
+
+-- =======================
+-- ویو v_tariff_consumption
+-- =======================
+-- نمایش میزان مصرف رزروها و جزئیات تعداد مهمان و هزینه اضافی
+
+CREATE VIEW v_tariff_consumption AS
+SELECT
+  ru.usu_res_id,
+  ru.usu_prj_code,
+  ru.usu_unit_code,
+  ru.usu_from_date,
+  ru.usu_row_no,
+  ru.usu_guest_count,
+  ru.usu_nights_used,
+  ru.usu_extra_guests,
+  ru.usu_total_extra_fee,
+  ru.usu_usage_status,
+  ru.usu_converted_amount
+FROM t_reservation_usage ru;
+
+-- =======================
+-- ویو v_tariff_extra_by_age
+-- =======================
+-- گزارش تعرفه مهمان اضافه بر اساس گروه سنی و شرایط پیک
+
+CREATE VIEW v_tariff_extra_by_age AS
+SELECT
+  ute.ute_prj_code,
+  ute.ute_unit_code,
+  ute.ute_from_date,
+  ute.ute_row_no,
+  ag.agp_title,
+  ute.ute_is_peak,
+  ute.ute_price_per_night
+FROM t_unit_tariff_extra ute
+JOIN t_age_group ag ON ute.ute_age_group = ag.agp_code;
+
+-- =======================
+-- ویو v_wallet_balance
+-- =======================
+-- مانده فعلی کیف پول هر شخص
+
+CREATE VIEW v_wallet_balance AS
+SELECT
+  wtx.wtx_per_code,
+  p.per_name,
+  SUM(CASE WHEN wtx_type = 'charge' THEN wtx_amount ELSE 0 END) AS total_charge,
+  SUM(CASE WHEN wtx_type = 'consume' THEN wtx_amount ELSE 0 END) AS total_consume,
+  SUM(CASE WHEN wtx_type = 'charge' THEN wtx_amount ELSE 0 END)
+    - SUM(CASE WHEN wtx_type = 'consume' THEN wtx_amount ELSE 0 END)
+    AS wallet_balance
+FROM t_wallet_transaction wtx
+JOIN t_person p ON wtx.wtx_per_code = p.per_code
+GROUP BY wtx.wtx_per_code, p.per_name;
+
+-- =======================
+-- ویو v_wallet_txn_history
+-- =======================
+-- سابقه تراکنش‌های کیف پول هر فرد
+
+CREATE VIEW v_wallet_txn_history AS
+SELECT
+  wtx.wtx_id,
+  wtx.wtx_per_code,
+  p.per_name,
+  wtx.wtx_type,
+  wtx.wtx_amount,
+  wtx.wtx_datetime,
+  wtx.wtx_desc,
+  wtx.wtx_ref_type,
+  wtx.wtx_ref_code,
+  wtx.wtx_jrn_code
+FROM t_wallet_transaction wtx
+JOIN t_person p ON wtx.wtx_per_code = p.per_code;
+
+-- =======================
+-- ویو v_profit_distribution
+-- =======================
+-- نمایش سودهای اختصاص‌یافته به سهام‌داران در هر پروژه و سال
+
+CREATE VIEW v_profit_distribution AS
+SELECT
+  spt.spt_prj_code,
+  prj.prj_title,
+  spt.spt_per_code,
+  p.per_name,
+  spt.spt_year,
+  spt.spt_period,
+  spt.spt_unit_profit,
+  spt.spt_shares,
+  spt.spt_total_profit,
+  spt.spt_is_paid,
+  spt.spt_paid_at
+FROM t_share_profit spt
+JOIN t_person p ON spt.spt_per_code = p.per_code
+JOIN t_project prj ON spt.spt_prj_code = prj.prj_code;
+
+-- =======================
+-- ویو v_user_log_audit
+-- =======================
+-- گزارش کامل عملکرد کاربران در جداول و عملیات ثبت‌شده
+
+CREATE VIEW v_user_log_audit AS
+SELECT
+  ul.ulg_id,
+  ul.ulg_per_code,
+  p.per_name,
+  ul.ulg_action,
+  ul.ulg_table_name,
+  ul.ulg_record_key,
+  ul.ulg_desc,
+  ul.ulg_ip_address,
+  ul.ulg_timestamp
+FROM t_user_log ul
+JOIN t_person p ON ul.ulg_per_code = p.per_code;
+
+-- =======================
+-- ویو v_project_person_roles
+-- =======================
+-- شناسایی نقش افراد در پروژه‌ها به‌صورت کلی: سهام‌دار، مهمان، نامشخص
+
+CREATE VIEW v_project_person_roles AS
+SELECT DISTINCT
+  per.per_code,
+  per.per_name,
+  prj.prj_code,
+  prj.prj_title,
+  CASE
+    WHEN shr.shr_id IS NOT NULL THEN 'shareholder'
+    WHEN res.res_id IS NOT NULL THEN 'guest'
+    ELSE 'unknown'
+  END AS role_type
+FROM t_person per
+LEFT JOIN t_shareholding shr ON per.per_code = shr.shr_per_code
+LEFT JOIN t_project prj ON shr.shr_prj_code = prj.prj_code
+LEFT JOIN t_reservation res ON per.per_code = res.res_per_code;
+
+-- =======================
+-- ویو v_reservation_report_summary
+-- =======================
+-- گزارش مدیریتی رزروها به تفکیک ماه، پروژه و واحد
+-- شامل تعداد رزرو، درآمد کل، میانگین مهمان و شب اقامت
+
+CREATE VIEW v_reservation_report_summary AS
+SELECT
+  res.res_prj_code,
+  res.res_unit_code,
+  YEAR(res.res_checkin) AS year,
+  MONTH(res.res_checkin) AS month,
+  COUNT(*) AS reservation_count,
+  SUM(res.res_total_price) AS total_income,
+  AVG(res.res_guest_count) AS avg_guests,
+  AVG(DATEDIFF(res.res_checkout, res.res_checkin)) AS avg_nights
+FROM t_reservation res
+GROUP BY res.res_prj_code, res.res_unit_code, YEAR(res.res_checkin), MONTH(res.res_checkin);

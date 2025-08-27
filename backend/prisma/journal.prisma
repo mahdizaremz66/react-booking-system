@@ -1,0 +1,35 @@
+model Journal {
+  jrnCode      String    @id @map("jrn_code") @db.VarChar(12)
+  jrnDate      DateTime  @map("jrn_date")
+  jrnDesc      String?   @db.Text @map("jrn_desc")
+  jrnType      String?   @default("manual") @map("jrn_type")
+  jrnModule    String?   @map("jrn_module")
+  jrnRefCode   String?   @map("jrn_ref_code")
+  jrnIsPosted  Boolean   @default(false) @map("jrn_is_posted")
+  jrnCreatedBy String?   @map("jrn_created_by")
+  jrnCreatedAt DateTime  @default(now()) @map("jrn_created_at")
+  jrnUpdatedBy String?   @map("jrn_updated_by")
+  jrnUpdatedAt DateTime? @map("jrn_updated_at")
+  journalDetails JournalDetail[]
+
+  @@map("t_journal")
+}
+
+model JournalDetail {
+  jrdJrnCode    String    @map("jrd_jrn_code") @db.VarChar(12)
+  jrdLineNo     Int       @map("jrd_line_no")
+  jrdAccCode    String    @map("jrd_acc_code")
+  jrdDesc       String?   @db.Text @map("jrd_desc")
+  jrdDebit      Decimal   @default(0.00) @db.Decimal(15, 2) @map("jrd_debit")
+  jrdCredit     Decimal   @default(0.00) @db.Decimal(15, 2) @map("jrd_credit")
+  jrdCreatedBy  String?   @map("jrd_created_by")
+  jrdCreatedAt  DateTime  @default(now()) @map("jrd_created_at")
+  jrdUpdatedBy  String?   @map("jrd_updated_by")
+  jrdUpdatedAt  DateTime? @map("jrd_updated_at")
+  
+  journal       Journal   @relation(fields: [jrdJrnCode], references: [jrnCode], onDelete: Cascade)
+  account       Account   @relation("AccountJournalDetails", fields: [jrdAccCode], references: [accCode])
+
+  @@id([jrdJrnCode, jrdLineNo])
+  @@map("t_journal_detail")
+}

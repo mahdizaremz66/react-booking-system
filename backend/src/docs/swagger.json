@@ -1,0 +1,248 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Booking System API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "ورود کاربر",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ورود موفق" },
+          "401": { "description": "نام کاربری یا رمز اشتباه است" }
+        }
+      }
+    },
+    "/persons": {
+      "get": {
+        "summary": "دریافت لیست اشخاص",
+        "responses": { "200": { "description": "لیست اشخاص" } }
+      },
+      "post": {
+        "summary": "ایجاد شخص جدید",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "شخص ایجاد شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/persons/{perCode}": {
+      "get": {
+        "summary": "دریافت اطلاعات یک شخص",
+        "parameters": [{ "name": "perCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "اطلاعات شخص" }, "404": { "description": "یافت نشد" } }
+      },
+      "put": {
+        "summary": "ویرایش اطلاعات شخص",
+        "parameters": [{ "name": "perCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } }
+      },
+      "delete": {
+        "summary": "حذف شخص",
+        "parameters": [{ "name": "perCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/projects": {
+      "get": {
+        "summary": "دریافت لیست پروژه‌ها",
+        "responses": { "200": { "description": "لیست پروژه‌ها" } }
+      },
+      "post": {
+        "summary": "ایجاد پروژه جدید",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "پروژه ایجاد شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/projects/{prjCode}": {
+      "get": {
+        "summary": "دریافت اطلاعات یک پروژه",
+        "parameters": [{ "name": "prjCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "اطلاعات پروژه" }, "404": { "description": "یافت نشد" } }
+      },
+      "put": {
+        "summary": "ویرایش اطلاعات پروژه",
+        "parameters": [{ "name": "prjCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } }
+      },
+      "delete": {
+        "summary": "حذف پروژه",
+        "parameters": [{ "name": "prjCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/units": {
+      "get": {
+        "summary": "دریافت لیست واحدها",
+        "responses": { "200": { "description": "لیست واحدها" } }
+      },
+      "post": {
+        "summary": "ایجاد واحد جدید",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "واحد ایجاد شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/units/{untPrjCode}/{untCode}": {
+      "get": {
+        "summary": "دریافت اطلاعات یک واحد",
+        "parameters": [
+          { "name": "untPrjCode", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "untCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "اطلاعات واحد" }, "404": { "description": "یافت نشد" } }
+      },
+      "put": {
+        "summary": "ویرایش اطلاعات واحد",
+        "parameters": [
+          { "name": "untPrjCode", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "untCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } }
+      },
+      "delete": {
+        "summary": "حذف واحد",
+        "parameters": [
+          { "name": "untPrjCode", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "untCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/reservations": {
+      "get": {
+        "summary": "دریافت لیست رزروها",
+        "responses": { "200": { "description": "لیست رزروها" } }
+      },
+      "post": {
+        "summary": "ایجاد رزرو جدید",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "رزرو ایجاد شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/reservations/{resId}": {
+      "get": {
+        "summary": "دریافت اطلاعات یک رزرو",
+        "parameters": [{ "name": "resId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "اطلاعات رزرو" }, "404": { "description": "یافت نشد" } }
+      },
+      "put": {
+        "summary": "ویرایش اطلاعات رزرو",
+        "parameters": [{ "name": "resId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } }
+      },
+      "delete": {
+        "summary": "حذف رزرو",
+        "parameters": [{ "name": "resId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } }
+      }
+    },
+    "/wallets": {
+      "get": { "summary": "دریافت لیست کیف پول‌ها", "responses": { "200": { "description": "لیست کیف پول‌ها" } } },
+      "post": { "summary": "ایجاد کیف پول جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "کیف پول ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/wallets/{wltPerCode}": {
+      "get": { "summary": "دریافت اطلاعات یک کیف پول", "parameters": [{ "name": "wltPerCode", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "اطلاعات کیف پول" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات کیف پول", "parameters": [{ "name": "wltPerCode", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف کیف پول", "parameters": [{ "name": "wltPerCode", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/wallets/transactions": {
+      "get": { "summary": "دریافت لیست تراکنش‌ها", "responses": { "200": { "description": "لیست تراکنش‌ها" } } },
+      "post": { "summary": "ایجاد تراکنش جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "تراکنش ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/wallets/transactions/{wtxId}": {
+      "get": { "summary": "دریافت اطلاعات یک تراکنش", "parameters": [{ "name": "wtxId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "اطلاعات تراکنش" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات تراکنش", "parameters": [{ "name": "wtxId", "in": "path", "required": true, "schema": { "type": "integer" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف تراکنش", "parameters": [{ "name": "wtxId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/journals": {
+      "get": { "summary": "دریافت لیست اسناد حسابداری", "responses": { "200": { "description": "لیست اسناد" } } },
+      "post": { "summary": "ایجاد سند جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "سند ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/journals/{jrnCode}": {
+      "get": { "summary": "دریافت اطلاعات یک سند", "parameters": [{ "name": "jrnCode", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "اطلاعات سند" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات سند", "parameters": [{ "name": "jrnCode", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف سند", "parameters": [{ "name": "jrnCode", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/journals/details": {
+      "get": { "summary": "دریافت لیست ریزآرتیکل‌ها", "responses": { "200": { "description": "لیست ریزآرتیکل‌ها" } } },
+      "post": { "summary": "ایجاد ریزآرتیکل جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "ریزآرتیکل ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/journals/details/{jrdJrnCode}/{jrdLineNo}": {
+      "get": { "summary": "دریافت اطلاعات یک ریزآرتیکل", "parameters": [
+        { "name": "jrdJrnCode", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "jrdLineNo", "in": "path", "required": true, "schema": { "type": "integer" } }
+      ], "responses": { "200": { "description": "اطلاعات ریزآرتیکل" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات ریزآرتیکل", "parameters": [
+        { "name": "jrdJrnCode", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "jrdLineNo", "in": "path", "required": true, "schema": { "type": "integer" } }
+      ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف ریزآرتیکل", "parameters": [
+        { "name": "jrdJrnCode", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "jrdLineNo", "in": "path", "required": true, "schema": { "type": "integer" } }
+      ], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/holdings": {
+      "get": { "summary": "دریافت لیست سهام‌داری‌ها", "responses": { "200": { "description": "لیست سهام‌داری‌ها" } } },
+      "post": { "summary": "ایجاد سهام‌داری جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "سهام‌داری ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/holdings/{shrId}": {
+      "get": { "summary": "دریافت اطلاعات یک سهام‌داری", "parameters": [{ "name": "shrId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "اطلاعات سهام‌داری" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات سهام‌داری", "parameters": [{ "name": "shrId", "in": "path", "required": true, "schema": { "type": "integer" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف سهام‌داری", "parameters": [{ "name": "shrId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/transfers": {
+      "get": { "summary": "دریافت لیست انتقال سهام‌ها", "responses": { "200": { "description": "لیست انتقال سهام‌ها" } } },
+      "post": { "summary": "ایجاد انتقال سهام جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "انتقال سهام ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/transfers/{stfId}": {
+      "get": { "summary": "دریافت اطلاعات یک انتقال سهام", "parameters": [{ "name": "stfId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "اطلاعات انتقال سهام" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات انتقال سهام", "parameters": [{ "name": "stfId", "in": "path", "required": true, "schema": { "type": "integer" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف انتقال سهام", "parameters": [{ "name": "stfId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/profits": {
+      "get": { "summary": "دریافت لیست سودها", "responses": { "200": { "description": "لیست سودها" } } },
+      "post": { "summary": "ایجاد سود جدید", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "201": { "description": "سود ایجاد شد" }, "400": { "description": "خطا" } } }
+    },
+    "/shares/profits/{sptId}": {
+      "get": { "summary": "دریافت اطلاعات یک سود", "parameters": [{ "name": "sptId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "اطلاعات سود" }, "404": { "description": "یافت نشد" } } },
+      "put": { "summary": "ویرایش اطلاعات سود", "parameters": [{ "name": "sptId", "in": "path", "required": true, "schema": { "type": "integer" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "ویرایش شد" }, "400": { "description": "خطا" } } },
+      "delete": { "summary": "حذف سود", "parameters": [{ "name": "sptId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "حذف شد" }, "400": { "description": "خطا" } } }
+    },
+    "/reports/person-ledger/{perCode}": {
+      "get": {
+        "summary": "دفتر حساب تفصیلی یک شخص",
+        "parameters": [{ "name": "perCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "دفتر حساب شخص" } }
+      }
+    },
+    "/reports/reservation-summary": {
+      "get": {
+        "summary": "گزارش مدیریتی رزروها",
+        "responses": { "200": { "description": "گزارش رزروها" } }
+      }
+    },
+    "/reports/wallet-balance": {
+      "get": {
+        "summary": "مانده فعلی کیف پول هر شخص",
+        "responses": { "200": { "description": "گزارش مانده کیف پول" } }
+      }
+    }
+  }
+} 
