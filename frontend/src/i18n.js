@@ -2,9 +2,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import translation files
-import faTranslation from './locales/fa.json';
-import enTranslation from './locales/en.json';
+// Import translation files from main translations folder
+import faTranslation from '../../translations/fa.json';
+import enTranslation from '../../translations/en.json';
 
 const resources = {
   fa: faTranslation,

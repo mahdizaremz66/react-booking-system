@@ -25,12 +25,12 @@
     "dayjs-jalali": "^0.0.2",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
     "material-react-table": "^3.2.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.6.0",
     "react-router-dom": "^7.6.3",
-
     "stylis": "^4.3.6",
     "stylis-plugin-rtl": "^2.1.1",
     "xlsx": "^0.18.5"

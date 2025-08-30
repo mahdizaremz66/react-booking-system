@@ -16,9 +16,7 @@ import {
     IconButton,
     Switch,
     Tabs,
-    Tab,
-    Card,
-    CardContent
+    Tab
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -57,6 +55,13 @@ import {
     getNumberFormatByValue
 } from '../config/languageSettings';
 import { getFontsByCategory } from '../config/fonts';
+import { 
+    getTranslationFiles, 
+    createTranslationFile, 
+    deleteTranslationFile,
+    validateFileName,
+    getDefaultTranslationTemplate
+} from '../services/translationFileService';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -88,6 +93,7 @@ export default function ThemeSettings() {
     const [socialNetworks, setSocialNetworks] = useState([]);
     const [licenses, setLicenses] = useState([]);
     const [templates, setTemplates] = useState({ builtin: [], custom: [], all: [] });
+    const [translationFiles, setTranslationFiles] = useState([]);
     const [activeTab, setActiveTab] = useState(0);
 
     // Initialize settings from file
@@ -99,10 +105,12 @@ export default function ThemeSettings() {
                 setSettings(formData);
 
                 // تنظیم زبان‌ها
-                setLanguages(Object.keys(loadedSettings.languages).map(code => ({
-                    code,
-                    ...loadedSettings.languages[code]
-                })));
+                setLanguages(Object.keys(loadedSettings.languages)
+                    .filter(code => code !== '_comment') // حذف _comment
+                    .map(code => ({
+                        code,
+                        ...loadedSettings.languages[code]
+                    })));
 
                 // تنظیم اطلاعات سایت و شرکت
                 setSiteCompanyInfo([
@@ -122,6 +130,10 @@ export default function ThemeSettings() {
                 // بارگذاری قالب‌ها
                 const templatesData = await loadThemeTemplates();
                 setTemplates(templatesData);
+
+                // بارگذاری فایل‌های ترجمه
+                const files = await getTranslationFiles();
+                setTranslationFiles(files);
             } catch (error) {
                 console.error('خطا در بارگذاری تنظیمات:', error);
                 setSnackbar({
@@ -208,6 +220,18 @@ export default function ThemeSettings() {
     };
 
     const removeLanguage = (index) => {
+        const language = languages[index];
+        
+        // بررسی اینکه آیا زبان فارسی یا انگلیسی است
+        if (language.code === 'fa' || language.code === 'en') {
+            setSnackbar({
+                open: true,
+                message: 'زبان‌های فارسی و انگلیسی قابل حذف نیستند',
+                severity: 'warning'
+            });
+            return;
+        }
+        
         if (languages.length <= 2) {
             setSnackbar({
                 open: true,
@@ -421,8 +445,59 @@ export default function ThemeSettings() {
         setSnackbar(prev => ({ ...prev, open: false }));
     };
 
+    const handleAddTranslationFile = () => {
+        const fileName = prompt('نام فایل ترجمه جدید (مثل: ar.json):');
+        if (!fileName) return;
+
+        const validation = validateFileName(fileName);
+        if (!validation.valid) {
+            setSnackbar({
+                open: true,
+                message: validation.message,
+                severity: 'error'
+            });
+            return;
+        }
+
+        // بررسی وجود فایل
+        const existingFile = translationFiles.find(file => file.name === fileName);
+        if (existingFile) {
+            setSnackbar({
+                open: true,
+                message: 'فایل ترجمه با این نام قبلاً وجود دارد',
+                severity: 'error'
+            });
+            return;
+        }
+
+        // ایجاد فایل جدید
+        const language = fileName.split('.')[0];
+        const content = getDefaultTranslationTemplate(language);
+        
+        createTranslationFile(fileName, language, content).then(result => {
+            if (result.success) {
+                setSnackbar({
+                    open: true,
+                    message: 'فایل ترجمه با موفقیت ایجاد شد',
+                    severity: 'success'
+                });
+                
+                // به‌روزرسانی لیست فایل‌ها
+                getTranslationFiles().then(files => {
+                    setTranslationFiles(files);
+                });
+            } else {
+                setSnackbar({
+                    open: true,
+                    message: result.message || 'خطا در ایجاد فایل ترجمه',
+                    severity: 'error'
+                });
+            }
+        });
+    };
+
     return (
-        <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        <Box sx={{ minHeight: '100vh' }}>
             <Box sx={{ 
                 backgroundColor: '#ffffff', 
                 borderRadius: 2, 
@@ -431,13 +506,13 @@ export default function ThemeSettings() {
                 maxWidth: '100%'
             }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center',  }}>
                     <SettingsIcon color="primary" />
                     <Typography variant="h4" color="primary">تنظیمات سایت</Typography>
                 </Box>
 
                 {/* Tabs */}
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider',  }}>
                     <Tabs value={activeTab} onChange={handleTabChange} aria-label="تنظیمات سایت">
                         <Tab label="تنظیمات زبان" icon={<LanguageIcon />} iconPosition="start" />
                         <Tab label="اطلاعات سایت و شرکت" icon={<BusinessIcon />} iconPosition="start" />
@@ -450,21 +525,35 @@ export default function ThemeSettings() {
 
                 {/* Tab 0: تنظیمات زبان */}
                 <TabPanel value={activeTab} index={0}>
-                    <Card>
-                        <CardContent>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <LanguageIcon color="primary" />
-                                <Typography variant="h6" color="primary">تنظیمات زبان‌ها</Typography>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={addLanguage}
-                                    sx={{ ml: 'auto' }}
-                                >
-                                    افزودن زبان
-                                </Button>
-                            </Box>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                            <LanguageIcon color="primary" />
+                            <Typography variant="h6" color="primary">تنظیمات زبان‌ها</Typography>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={addLanguage}
+                                sx={{ ml: 'auto' }}
+                            >
+                                افزودن زبان
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddTranslationFile}
+                                sx={{ ml: 1 }}
+                            >
+                                افزودن فایل ترجمه
+                            </Button>
+                        </Box>
 
                             {languages.map((lang, index) => (
                                 <Box key={index} sx={{
@@ -480,6 +569,19 @@ export default function ThemeSettings() {
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                         <Typography variant="h6" color="primary">{lang.name || `زبان ${index + 1}`}</Typography>
+                                        {(lang.code === 'fa' || lang.code === 'en') && (
+                                            <Box sx={{
+                                                backgroundColor: 'primary.main',
+                                                color: 'white',
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                fontSize: '0.75rem',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                اصلی
+                                            </Box>
+                                        )}
                                         <Switch
                                             checked={lang.isActive || false}
                                             onChange={(e) => handleLanguageChange(index, 'isActive', e.target.checked)}
@@ -492,7 +594,7 @@ export default function ThemeSettings() {
                                             color="secondary"
                                         />
                                         <Typography variant="body2">پیش‌فرض</Typography>
-                                        {languages.length > 2 && (
+                                        {languages.length > 2 && lang.code !== 'fa' && lang.code !== 'en' && (
                                             <IconButton
                                                 color="error"
                                                 onClick={() => removeLanguage(index)}
@@ -513,6 +615,8 @@ export default function ThemeSettings() {
                                                 onChange={(e) => handleLanguageChange(index, 'code', e.target.value)}
                                                 size="small"
                                                 required
+                                                disabled={lang.code === 'fa' || lang.code === 'en'}
+                                                helperText={lang.code === 'fa' || lang.code === 'en' ? 'کد زبان‌های اصلی قابل تغییر نیست' : ''}
                                             />
                                         </Grid>
                                         <Grid size={{ xs: 12, sm: 4 }}>
@@ -566,14 +670,20 @@ export default function ThemeSettings() {
                                             </FormControl>
                                         </Grid>
                                         <Grid size={{ xs: 12, sm: 4 }}>
-                                            <TextField
-                                                fullWidth
-                                                label="فایل ترجمه"
-                                                value={lang.translationFile || ''}
-                                                onChange={(e) => handleLanguageChange(index, 'translationFile', e.target.value)}
-                                                size="small"
-                                                placeholder="fa.json"
-                                            />
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>فایل ترجمه</InputLabel>
+                                                <Select
+                                                    value={lang.translationFile || ''}
+                                                    onChange={(e) => handleLanguageChange(index, 'translationFile', e.target.value)}
+                                                    label="فایل ترجمه"
+                                                >
+                                                    {translationFiles.map(file => (
+                                                        <MenuItem key={file.name} value={file.name}>
+                                                            {file.label}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
                                         </Grid>
 
                                         {/* ستون سوم: فونت‌ها */}
@@ -685,23 +795,27 @@ export default function ThemeSettings() {
                                 </Box>
                             ))}
 
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                                <Button
-                                    variant="contained"
-                                    startIcon={<SaveIcon />}
-                                    onClick={() => handleSaveTab(0)}
-                                >
-                                    ذخیره تغییرات
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                            <Button
+                                variant="contained"
+                                startIcon={<SaveIcon />}
+                                onClick={() => handleSaveTab(0)}
+                            >
+                                ذخیره تغییرات
+                            </Button>
+                        </Box>
+                    </Box>
                 </TabPanel>
 
                 {/* Tab 1: اطلاعات سایت و شرکت */}
                 <TabPanel value={activeTab} index={1}>
-                    <Card>
-                        <CardContent>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <BusinessIcon color="primary" />
                                 <Typography variant="h6" color="primary">اطلاعات سایت و شرکت</Typography>
@@ -786,14 +900,18 @@ export default function ThemeSettings() {
                                     ذخیره تغییرات
                                 </Button>
                             </Box>
-                        </CardContent>
-                    </Card>
+                    </Box>
                 </TabPanel>
 
                 {/* Tab 2: شبکه‌های اجتماعی و مجوزها */}
                 <TabPanel value={activeTab} index={2}>
-                    <Card>
-                        <CardContent>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <ShareIcon color="primary" />
                                 <Typography variant="h6" color="primary">شبکه‌های اجتماعی و مجوزها</Typography>
@@ -912,14 +1030,18 @@ export default function ThemeSettings() {
                                     ذخیره تغییرات
                                 </Button>
                             </Box>
-                        </CardContent>
-                    </Card>
+                    </Box>
                 </TabPanel>
 
                 {/* Tab 3: تنظیمات تایپوگرافی */}
                 <TabPanel value={activeTab} index={3}>
-                    <Card>
-                        <CardContent>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <TypographyIcon color="primary" />
                                 <Typography variant="h6" color="primary">تنظیمات تایپوگرافی</Typography>
@@ -983,14 +1105,18 @@ export default function ThemeSettings() {
                                     ذخیره تغییرات
                                 </Button>
                             </Box>
-                        </CardContent>
-                    </Card>
+                    </Box>
                 </TabPanel>
 
                 {/* Tab 4: تنظیمات کامپوننت‌ها */}
                 <TabPanel value={activeTab} index={4}>
-                    <Card>
-                        <CardContent>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <ColorLensIcon color="primary" />
                                 <Typography variant="h6" color="primary">تنظیمات کامپوننت‌ها</Typography>
@@ -1036,14 +1162,18 @@ export default function ThemeSettings() {
                                     ذخیره تغییرات
                                 </Button>
                             </Box>
-                        </CardContent>
-                    </Card>
+                    </Box>
                 </TabPanel>
 
                 {/* Tab 5: تنظیمات قالب */}
                 <TabPanel value={activeTab} index={5}>
-                    <Card>
-                        <CardContent>
+                    <Box sx={{ 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: 2, 
+                        p: 3, 
+                        boxShadow: 1,
+                        border: '1px solid #e0e0e0'
+                    }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <StyleIcon color="primary" />
                                 <Typography variant="h6" color="primary">تنظیمات قالب</Typography>
@@ -1237,8 +1367,7 @@ export default function ThemeSettings() {
                                     ذخیره تغییرات
                                 </Button>
                             </Box>
-                        </CardContent>
-                    </Card>
+                    </Box>
                 </TabPanel>
             </Box>
 

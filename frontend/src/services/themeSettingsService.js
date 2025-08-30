@@ -345,7 +345,9 @@ export const convertThemeConfigToFormData = (config) => {
   // تبدیل زبان‌ها از آبجکت به آرایه
   const languagesArray = [];
   if (config.languages) {
-    Object.keys(config.languages).forEach(code => {
+    Object.keys(config.languages)
+      .filter(code => code !== '_comment') // حذف _comment
+      .forEach(code => {
       const lang = config.languages[code];
       languagesArray.push({
         code: lang.code || code,
@@ -756,7 +758,9 @@ export const convertThemeConfigToDatabase = (themeConfig) => {
   
   // تبدیل زبان‌ها
   if (themeConfig.languages) {
-    Object.keys(themeConfig.languages).forEach(code => {
+    Object.keys(themeConfig.languages)
+      .filter(code => code !== '_comment') // حذف _comment
+      .forEach(code => {
       const lang = themeConfig.languages[code];
       dbData.languages.push({
         code: lang.code,

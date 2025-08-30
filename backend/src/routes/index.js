@@ -12,6 +12,7 @@ import shareRoutes from "./share.js";
 import reportRoutes from "./report.js";
 import accountRoutes from "./account.js";
 import themeRoutes from "./theme.js";
+import translationFileRoutes from "./translationFiles.js";
 
 router.use("/auth", authRoutes);
 router.use("/persons", personRoutes);
@@ -24,5 +25,6 @@ router.use("/reports", reportRoutes);
 router.use("/wallets", walletRoutes);
 router.use("/accounts", accountRoutes);
 router.use("/theme", themeRoutes);
+router.use("/translation-files", translationFileRoutes);
 
 export default router; 
