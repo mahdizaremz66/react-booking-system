@@ -25,8 +25,7 @@ async function seedThemeData() {
           thlFontFallback: 'Tahoma, Arial, sans-serif',
           thlTranslationFile: 'fa.json',
           thlDateFormat: 'YYYY/MM/DD',
-          thlTimeFormat: 'HH:mm',
-          thlNumberFormat: 'fa-IR',
+
           thlCurrency: 'IRR',
           thlCurrencySymbol: 'ریال',
           thlIsActive: true,
@@ -43,8 +42,7 @@ async function seedThemeData() {
           thlFontFallback: 'Arial, sans-serif',
           thlTranslationFile: 'en.json',
           thlDateFormat: 'MM/DD/YYYY',
-          thlTimeFormat: 'HH:mm',
-          thlNumberFormat: 'en-US',
+
           thlCurrency: 'USD',
           thlCurrencySymbol: '$',
           thlIsActive: true,

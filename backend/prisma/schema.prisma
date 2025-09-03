@@ -409,8 +409,7 @@ model ThemeLanguages {
   thlFontFallback    String   @default("Tahoma, Arial, sans-serif") @map("thl_font_fallback")
   thlTranslationFile String?  @map("thl_translation_file")
   thlDateFormat      String   @default("MM/DD/YYYY") @map("thl_date_format")
-  thlTimeFormat      String   @default("HH:mm") @map("thl_time_format")
-  thlNumberFormat    String   @default("en-US") @map("thl_number_format")
+
   thlCurrency        String   @default("USD") @map("thl_currency")
   thlCurrencySymbol  String   @default("$") @map("thl_currency_symbol")
   thlIsActive        Boolean  @default(true) @map("thl_is_active")

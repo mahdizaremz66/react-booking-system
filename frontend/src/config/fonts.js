@@ -1,4 +1,4 @@
-// تعریف فونت‌های موجود در پروژه
+// تعریف فونت‌های موجود در پروژه (فقط فونت‌های نصب شده)
 export const availableFonts = [
   {
     family: 'IRANSansXFaNum',
@@ -20,34 +20,6 @@ export const availableFonts = [
     category: 'persian',
     weights: ['normal', 'bold'],
     fallback: 'Tahoma, Arial, sans-serif'
-  },
-  {
-    family: 'Arial',
-    name: 'Arial',
-    category: 'english',
-    weights: ['normal', 'bold'],
-    fallback: 'Helvetica, sans-serif'
-  },
-  {
-    family: 'Tahoma',
-    name: 'Tahoma',
-    category: 'english',
-    weights: ['normal', 'bold'],
-    fallback: 'Arial, sans-serif'
-  },
-  {
-    family: 'Helvetica',
-    name: 'Helvetica',
-    category: 'english',
-    weights: ['normal', 'bold'],
-    fallback: 'Arial, sans-serif'
-  },
-  {
-    family: 'Times New Roman',
-    name: 'Times New Roman',
-    category: 'english',
-    weights: ['normal', 'bold'],
-    fallback: 'serif'
   }
 ];
 

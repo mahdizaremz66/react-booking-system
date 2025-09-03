@@ -45,51 +45,7 @@ export const dateFormats = [
   }
 ];
 
-export const timeFormats = [
-  {
-    value: 'HH:mm',
-    label: '24 ساعته (HH:mm)',
-    example: '14:30'
-  },
-  {
-    value: 'hh:mm A',
-    label: '12 ساعته (hh:mm A)',
-    example: '02:30 PM'
-  },
-  {
-    value: 'HH:mm:ss',
-    label: '24 ساعته با ثانیه (HH:mm:ss)',
-    example: '14:30:45'
-  },
-  {
-    value: 'hh:mm:ss A',
-    label: '12 ساعته با ثانیه (hh:mm:ss A)',
-    example: '02:30:45 PM'
-  }
-];
 
-export const numberFormats = [
-  {
-    value: 'fa-IR',
-    label: 'فارسی (fa-IR)',
-    example: '۱,۲۳۴,۵۶۷'
-  },
-  {
-    value: 'en-US',
-    label: 'انگلیسی آمریکا (en-US)',
-    example: '1,234,567'
-  },
-  {
-    value: 'en-GB',
-    label: 'انگلیسی بریتانیا (en-GB)',
-    example: '1,234,567'
-  },
-  {
-    value: 'ar-SA',
-    label: 'عربی (ar-SA)',
-    example: '١٬٢٣٤٬٥٦٧'
-  }
-];
 
 export const currencies = [
   {
@@ -139,8 +95,6 @@ export const defaultLanguages = [
     direction: 'rtl',
     calendar: 'persian',
     dateFormat: 'YYYY/MM/DD',
-    timeFormat: 'HH:mm',
-    numberFormat: 'fa-IR',
     currency: 'IRR',
     isActive: true,
     isDefault: true
@@ -152,8 +106,6 @@ export const defaultLanguages = [
     direction: 'ltr',
     calendar: 'gregorian',
     dateFormat: 'MM/DD/YYYY',
-    timeFormat: 'HH:mm',
-    numberFormat: 'en-US',
     currency: 'USD',
     isActive: true,
     isDefault: false
@@ -170,12 +122,4 @@ export const getDateFormatByValue = (value) => {
   return dateFormats.find(format => format.value === value);
 };
 
-// دریافت فرمت زمان بر اساس مقدار
-export const getTimeFormatByValue = (value) => {
-  return timeFormats.find(format => format.value === value);
-};
 
-// دریافت فرمت عدد بر اساس مقدار
-export const getNumberFormatByValue = (value) => {
-  return numberFormats.find(format => format.value === value);
-};

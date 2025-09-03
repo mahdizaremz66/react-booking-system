@@ -46,21 +46,15 @@ import {
 import { 
     calendarTypes, 
     dateFormats, 
-    timeFormats, 
-    numberFormats, 
+ 
     currencies,
     getCurrencyByCode,
     getDateFormatByValue,
-    getTimeFormatByValue,
-    getNumberFormatByValue
+
 } from '../config/languageSettings';
 import { getFontsByCategory } from '../config/fonts';
 import { 
-    getTranslationFiles, 
-    createTranslationFile, 
-    deleteTranslationFile,
-    validateFileName,
-    getDefaultTranslationTemplate
+    getTranslationFiles
 } from '../services/translationFileService';
 
 // Tab Panel Component
@@ -377,7 +371,7 @@ export default function ThemeSettings() {
                         ...settings,
                         typography: {
                             fontFamily: settings.fontFamily,
-                            fontSize: settings.fontSize,
+
                             fontWeight: settings.fontWeight,
                             lineHeight: settings.lineHeight
                         }
@@ -445,56 +439,7 @@ export default function ThemeSettings() {
         setSnackbar(prev => ({ ...prev, open: false }));
     };
 
-    const handleAddTranslationFile = () => {
-        const fileName = prompt('نام فایل ترجمه جدید (مثل: ar.json):');
-        if (!fileName) return;
 
-        const validation = validateFileName(fileName);
-        if (!validation.valid) {
-            setSnackbar({
-                open: true,
-                message: validation.message,
-                severity: 'error'
-            });
-            return;
-        }
-
-        // بررسی وجود فایل
-        const existingFile = translationFiles.find(file => file.name === fileName);
-        if (existingFile) {
-            setSnackbar({
-                open: true,
-                message: 'فایل ترجمه با این نام قبلاً وجود دارد',
-                severity: 'error'
-            });
-            return;
-        }
-
-        // ایجاد فایل جدید
-        const language = fileName.split('.')[0];
-        const content = getDefaultTranslationTemplate(language);
-        
-        createTranslationFile(fileName, language, content).then(result => {
-            if (result.success) {
-                setSnackbar({
-                    open: true,
-                    message: 'فایل ترجمه با موفقیت ایجاد شد',
-                    severity: 'success'
-                });
-                
-                // به‌روزرسانی لیست فایل‌ها
-                getTranslationFiles().then(files => {
-                    setTranslationFiles(files);
-                });
-            } else {
-                setSnackbar({
-                    open: true,
-                    message: result.message || 'خطا در ایجاد فایل ترجمه',
-                    severity: 'error'
-                });
-            }
-        });
-    };
 
     return (
         <Box sx={{ minHeight: '100vh' }}>
@@ -543,15 +488,6 @@ export default function ThemeSettings() {
                                 sx={{ ml: 'auto' }}
                             >
                                 افزودن زبان
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddTranslationFile}
-                                sx={{ ml: 1 }}
-                            >
-                                افزودن فایل ترجمه
                             </Button>
                         </Box>
 
@@ -687,7 +623,7 @@ export default function ThemeSettings() {
                                         </Grid>
 
                                         {/* ستون سوم: فونت‌ها */}
-                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <FormControl fullWidth size="small">
                                                 <InputLabel>فونت اصلی</InputLabel>
                                                 <Select
@@ -703,7 +639,7 @@ export default function ThemeSettings() {
                                                 </Select>
                                             </FormControl>
                                         </Grid>
-                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <TextField
                                                 fullWidth
                                                 label="فونت پشتیبان"
@@ -714,8 +650,8 @@ export default function ThemeSettings() {
                                             />
                                         </Grid>
 
-                                        {/* ستون چهارم: فرمت‌های تاریخ و زمان */}
-                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                        {/* ستون چهارم: فرمت‌های تاریخ و ارز */}
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <FormControl fullWidth size="small">
                                                 <InputLabel>فرمت تاریخ</InputLabel>
                                                 <Select
@@ -731,41 +667,7 @@ export default function ThemeSettings() {
                                                 </Select>
                                             </FormControl>
                                         </Grid>
-                                        <Grid size={{ xs: 12, sm: 6 }}>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel>فرمت زمان</InputLabel>
-                                                <Select
-                                                    value={lang.timeFormat || 'HH:mm'}
-                                                    onChange={(e) => handleLanguageChange(index, 'timeFormat', e.target.value)}
-                                                    label="فرمت زمان"
-                                                >
-                                                    {timeFormats.map(format => (
-                                                        <MenuItem key={format.value} value={format.value}>
-                                                            {format.label} ({format.example})
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                        </Grid>
-
-                                        {/* ستون پنجم: فرمت عدد و ارز */}
-                                        <Grid size={{ xs: 12, sm: 6 }}>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel>فرمت عدد</InputLabel>
-                                                <Select
-                                                    value={lang.numberFormat || 'en-US'}
-                                                    onChange={(e) => handleLanguageChange(index, 'numberFormat', e.target.value)}
-                                                    label="فرمت عدد"
-                                                >
-                                                    {numberFormats.map(format => (
-                                                        <MenuItem key={format.value} value={format.value}>
-                                                            {format.label} ({format.example})
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 3 }}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <FormControl fullWidth size="small">
                                                 <InputLabel>ارز</InputLabel>
                                                 <Select
@@ -781,7 +683,7 @@ export default function ThemeSettings() {
                                                 </Select>
                                             </FormControl>
                                         </Grid>
-                                        <Grid size={{ xs: 12, sm: 3 }}>
+                                        <Grid size={{ xs: 12, sm: 4 }}>
                                             <TextField
                                                 fullWidth
                                                 label="نماد ارز"
@@ -1064,16 +966,7 @@ export default function ThemeSettings() {
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid xs={12} sm={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="اندازه فونت پایه"
-                                        type="number"
-                                        value={settings.fontSize || ''}
-                                        onChange={(e) => handleSettingChange('fontSize', e.target.value)}
-                                        InputProps={{ inputProps: { min: 12, max: 24 } }}
-                                    />
-                                </Grid>
+
                                 <Grid xs={12} sm={6}>
                                     <TextField
                                         fullWidth

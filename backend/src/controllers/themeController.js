@@ -42,8 +42,7 @@ const getThemeSettings = async (req, res) => {
       fontFallback: lang.thlFontFallback,
       translationFile: lang.thlTranslationFile,
       dateFormat: lang.thlDateFormat,
-      timeFormat: lang.thlTimeFormat,
-      numberFormat: lang.thlNumberFormat,
+
       currency: lang.thlCurrency,
       currencySymbol: lang.thlCurrencySymbol,
       isActive: lang.thlIsActive,
@@ -117,8 +116,7 @@ const saveThemeSettings = async (req, res) => {
             thlFontFallback: lang.fontFallback,
             thlTranslationFile: lang.translationFile,
             thlDateFormat: lang.dateFormat,
-            thlTimeFormat: lang.timeFormat,
-            thlNumberFormat: lang.numberFormat,
+
             thlCurrency: lang.currency,
             thlCurrencySymbol: lang.currencySymbol,
             thlIsActive: lang.isActive,
@@ -310,8 +308,7 @@ const getLanguages = async (req, res) => {
       fontFallback: lang.thlFontFallback,
       translationFile: lang.thlTranslationFile,
       dateFormat: lang.thlDateFormat,
-      timeFormat: lang.thlTimeFormat,
-      numberFormat: lang.thlNumberFormat,
+
       currency: lang.thlCurrency,
       currencySymbol: lang.thlCurrencySymbol,
       isActive: lang.thlIsActive,

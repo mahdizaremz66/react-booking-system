@@ -1,7 +1,7 @@
 import themeSettingsData from '../config/themeSettings.json';
 import { defaultThemeConfig } from '../config/themeConfig';
 import { availableFonts, defaultFonts } from '../config/fonts';
-import { calendarTypes, dateFormats, timeFormats, numberFormats, currencies, defaultLanguages } from '../config/languageSettings';
+import { calendarTypes, dateFormats, currencies, defaultLanguages } from '../config/languageSettings';
 import { isSystemTemplate, isDeletableTemplate } from '../config/themeTemplates';
 
 // خواندن تنظیمات از API یا فایل (fallback)
@@ -86,8 +86,7 @@ export const convertFormDataToThemeConfig = (formData) => {
           },
           translationFile: lang.translationFile || `${lang.code}.json`,
           dateFormat: lang.dateFormat || 'MM/DD/YYYY',
-          timeFormat: lang.timeFormat || 'HH:mm',
-          numberFormat: lang.numberFormat || 'en-US',
+
           currency: lang.currency || 'USD',
           currencySymbol: lang.currencySymbol || '$',
           isActive: lang.isActive !== undefined ? lang.isActive : true,
@@ -359,8 +358,7 @@ export const convertThemeConfigToFormData = (config) => {
         fontFallback: lang.font?.fallback || 'Tahoma, Arial, sans-serif',
         translationFile: lang.translationFile || `${code}.json`,
         dateFormat: lang.dateFormat || 'MM/DD/YYYY',
-        timeFormat: lang.timeFormat || 'HH:mm',
-        numberFormat: lang.numberFormat || 'en-US',
+
         currency: lang.currency || 'USD',
         currencySymbol: lang.currencySymbol || '$',
         isActive: lang.isActive !== undefined ? lang.isActive : true,
@@ -570,8 +568,7 @@ export const convertThemeConfigToFormData = (config) => {
 export const getAvailableFonts = () => availableFonts;
 export const getCalendarTypes = () => calendarTypes;
 export const getDateFormats = () => dateFormats;
-export const getTimeFormats = () => timeFormats;
-export const getNumberFormats = () => numberFormats;
+
 export const getCurrencies = () => currencies;
 
 // دریافت فایل‌های ترجمه موجود
@@ -597,8 +594,7 @@ export const createNewLanguage = () => {
     fontFallback: 'Tahoma, Arial, sans-serif',
     translationFile: '',
     dateFormat: 'MM/DD/YYYY',
-    timeFormat: 'HH:mm',
-    numberFormat: 'en-US',
+
     currency: 'USD',
     currencySymbol: '$',
     isActive: true,
@@ -663,8 +659,7 @@ export const convertDatabaseToThemeConfig = (dbData) => {
         },
         translationFile: lang.translationFile,
         dateFormat: lang.dateFormat,
-        timeFormat: lang.timeFormat,
-        numberFormat: lang.numberFormat,
+
         currency: lang.currency,
         currencySymbol: lang.currencySymbol,
         isActive: lang.isActive,
@@ -772,8 +767,7 @@ export const convertThemeConfigToDatabase = (themeConfig) => {
         fontFallback: lang.font?.fallback,
         translationFile: lang.translationFile,
         dateFormat: lang.dateFormat,
-        timeFormat: lang.timeFormat,
-        numberFormat: lang.numberFormat,
+
         currency: lang.currency,
         currencySymbol: lang.currencySymbol,
         isActive: lang.isActive,
